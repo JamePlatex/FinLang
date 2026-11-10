@@ -1,0 +1,7 @@
+// ESPERA: E09 E01 E02 E10
+// Préstamo usado como valor o asignado, préstamo inexistente, campo repetido y retorno sin moneda.
+prestamo p { monto: 1000 PEN; tea: 10%; plazo: 12; seguro: 1%; seguro: 2%; }
+p = 3;
+mostrar p;
+mostrar cuota(q);
+funcion g(num x): dinero { retornar 1 PEN; }

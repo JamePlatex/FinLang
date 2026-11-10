@@ -4,7 +4,7 @@ Uso:  python tools/derivaciones.py            (imprime Markdown completo)
       python tools/derivaciones.py --compact  (agrupa cadenas de producciones unitarias con =>*)
       python tools/derivaciones.py --json     (salida estructurada)
 
-La CFG de aquí es la misma del informe (sección 5).  Las alternativas EBNF de ANTLR
+La CFG de aquí es la misma del informe (sección de gramática; actualizada en el Hito 2).  Las alternativas EBNF de ANTLR
 (*, ?, ( )) se expresan con no terminales auxiliares (stmtList, init, moneda, ...).
 Terminal entre comillas = lexema fijo; MAYÚSCULAS = clase de token (ID, NUMERO, ...).
 """
@@ -17,10 +17,18 @@ from FinLangLexer import FinLangLexer
 
 # ----------------------------- gramática (BNF) -------------------------
 G = {
- "program":      [["stmtList", "EOF"]],
+ "program":      [["topList", "EOF"]],
+ "topList":      [["topLevel", "topList"], []],
+ "topLevel":     [["funcDecl"], ["statement"]],
+ # funciones (Hito 2)
+ "funcDecl":     [["'funcion'", "ID", "'('", "params", "')'", "':'", "tipo", "block"]],
+ "params":       [["param", "paramTail"], []],
+ "paramTail":    [["','", "param", "paramTail"], []],
+ "param":        [["tipo", "ID"]],
+ "returnStmt":   [["'retornar'", "expr", "';'"]],
  "stmtList":     [["statement", "stmtList"], []],
  "statement":    [["declaration"], ["assignment"], ["loanDecl"], ["printStmt"], ["ifStmt"],
-                  ["whileStmt"], ["forStmt"], ["scheduleStmt"], ["block"]],
+                  ["whileStmt"], ["forStmt"], ["scheduleStmt"], ["returnStmt"], ["block"]],
  "block":        [["'{'", "stmtList", "'}'"]],
  # declaraciones
  "declaration":  [["tipo", "ID", "init", "';'"]],
@@ -31,7 +39,9 @@ G = {
  "assignment":   [["ID", "'='", "expr", "';'"]],
  # préstamo y reportes
  "loanDecl":     [["'prestamo'", "ID", "'{'", "'monto'", "':'", "expr", "';'", "'tea'", "':'", "expr", "';'",
-                   "'plazo'", "':'", "expr", "';'", "'}'"]],
+                   "'plazo'", "':'", "expr", "';'", "extras", "'}'"]],
+ "extras":       [["extra", "extras"], []],
+ "extra":        [["'comision'", "':'", "expr", "';'"], ["'seguro'", "':'", "expr", "';'"]],
  "printStmt":    [["'mostrar'", "expr", "exprTail", "';'"]],
  "exprTail":     [["','", "expr", "exprTail"], []],
  "scheduleStmt": [["'cronograma'", "ID", "';'"]],
@@ -52,7 +62,12 @@ G = {
  "prim":  [["'('", "expr", "')'"], ["NUMERO", "CURRENCY"], ["NUMERO"], ["PORCENTAJE"],
            ["'verdadero'"], ["'falso'"], ["STRING"], ["ID"],
            ["'cuota'", "'('", "ID", "')'"], ["'interesTotal'", "'('", "ID", "')'"],
-           ["'convertir'", "'('", "expr", "','", "CURRENCY", "','", "expr", "')'"]],
+           ["'convertir'", "'('", "expr", "','", "CURRENCY", "','", "expr", "')'"],
+           ["'tcea'", "'('", "ID", "')'"], ["'tasaMensual'", "'('", "ID", "')'"],
+           ["'capitalizar'", "'('", "expr", "','", "expr", "','", "expr", "')'"],
+           ["ID", "'('", "args", "')'"]],
+ "args":  [["expr", "argTail"], []],
+ "argTail": [["','", "expr", "argTail"], []],
 }
 TOKEN_CLASSES = {"ID", "NUMERO", "PORCENTAJE", "STRING", "CURRENCY", "EOF"}
 
@@ -78,6 +93,22 @@ EJEMPLOS = [
    ("printStmt", 'mostrar "Cuota:", cuota(auto);'),
    ("scheduleStmt", "cronograma auto;"),
    ("printStmt", "mostrar interesTotal(auto);")]),
+ ("Declaración de funciones (Hito 2)", "funcDecl", [
+   "funcion doble(num n): num { retornar n * 2; }",
+   "funcion r5(): tasa { retornar 1.5%; }",
+   "funcion conIgv(dinero[PEN] m): dinero[PEN] { retornar m + m * 18%; }",
+   "funcion suma(num a, num b): num { retornar a + b; }"]),
+ ("Retornar (Hito 2)", "returnStmt", [
+   "retornar x;", "retornar x * x + 1;", "retornar c > 1500 PEN;", "retornar convertir(c, PEN, 3.75);"]),
+ ("Llamadas a funciones (Hito 2)", "expr", [
+   "doble(meses)", "doble(meses) + 1", "margen(ingreso, 1200 PEN)", "r5()"]),
+ ("Préstamo con costos (Hito 2)", "loanDecl", [
+   "prestamo p1 { monto: 10000 PEN; tea: 20%; plazo: 12; comision: 10 PEN; }",
+   "prestamo p2 { monto: 10000 PEN; tea: 20%; plazo: 12; seguro: 0.08%; }",
+   "prestamo p3 { monto: 10000 PEN; tea: 20%; plazo: 12; comision: 10 PEN; seguro: 0.08%; }",
+   "prestamo p4 { monto: 5000 USD; tea: 15%; plazo: 24; seguro: 0.05%; comision: 3 USD; }"]),
+ ("Funciones del dominio (Hito 2)", "expr", [
+   "tcea(p3)", "tasaMensual(auto)", "tcea(p3) > tasaMensual(p3)", "capitalizar(1000 PEN, 1%, 12)"]),
 ]
 
 # ----------------------------- léxico -----------------------------------

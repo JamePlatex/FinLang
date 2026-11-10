@@ -1,0 +1,49 @@
+// ESPERA: OK
+// Los 5 ejemplos por construcción nueva del informe (Hito 2).
+num meses = 12;
+dinero[PEN] ingreso = 3000 PEN;
+prestamo auto { monto: 30000 USD; tea: 12%; plazo: 36; }
+
+// --- Declaración de funciones ---
+funcion doble(num n): num { retornar n * 2; }
+funcion esPar(num n): bool { si (n == 0) retornar verdadero; sino retornar !esPar(n - 1); }
+funcion conIgv(dinero[PEN] m): dinero[PEN] { retornar m + m * 18%; }
+funcion suma(num a, num b): num { retornar a + b; }
+funcion margen(dinero[PEN] ingreso, dinero[PEN] gasto): num { retornar (ingreso - gasto) / ingreso; }
+
+// --- Retornar ---
+funcion r1(num x): num { retornar x; }
+funcion r2(num x): num { retornar x * x + 1; }
+funcion r3(dinero[PEN] c): bool { retornar c > 1500 PEN; }
+funcion r4(dinero[USD] c): dinero[PEN] { retornar convertir(c, PEN, 3.75); }
+funcion r5(): tasa { retornar 1.5%; }
+
+// --- Llamadas a funciones ---
+mostrar doble(meses);
+mostrar doble(meses) + 1;
+mostrar conIgv(100 PEN);
+mostrar margen(ingreso, 1200 PEN);
+si (esPar(meses)) mostrar "par";
+
+// --- Préstamo con costos ---
+prestamo p1 { monto: 10000 PEN; tea: 20%; plazo: 12; comision: 10 PEN; }
+prestamo p2 { monto: 10000 PEN; tea: 20%; plazo: 12; seguro: 0.08%; }
+prestamo p3 { monto: 10000 PEN; tea: 20%; plazo: 12; comision: 10 PEN; seguro: 0.08%; }
+prestamo p4 { monto: 5000 USD; tea: 15%; plazo: 24; seguro: 0.05%; comision: 3 USD; }
+prestamo p5 { monto: 150000 PEN; tea: 9.5%; plazo: 240; comision: 15 PEN; seguro: 0.03%; }
+
+// --- Funciones del dominio (Hito 2) ---
+mostrar tcea(p3);
+mostrar tasaMensual(auto);
+mostrar tcea(p3) > tasaMensual(p3);
+mostrar capitalizar(1000 PEN, 1%, 12);
+dinero[PEN] futuro = capitalizar(ingreso, tasaMensual(p1), meses);
+// SALIDA: 24
+// SALIDA: 25
+// SALIDA: 118.00 PEN
+// SALIDA: 0.6
+// SALIDA: par
+// SALIDA: 23.6549%
+// SALIDA: 0.948879%
+// SALIDA: verdadero
+// SALIDA: 1126.83 PEN

@@ -1,0 +1,5 @@
+// ESPERA: E02 E04 E10
+funcion f(dinero[PEN] a): dinero[PEN] { retornar a; }
+funcion f(num a): num { retornar a; }
+funcion g(dinero b): num { retornar 1; }
+dinero[PEN] r = f(10 USD);

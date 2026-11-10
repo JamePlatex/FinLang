@@ -11,6 +11,15 @@ Errores semánticos verificados:
   E08  Condición que no es booleana (si / mientras)
   E09  Identificador no es un préstamo (o préstamo usado como valor)
   E10  Variable 'dinero' sin moneda (sin [MONEDA] ni valor inicial)
+Agregados en el Hito 2 (funciones y costos del préstamo):
+  E11  Llamada a una función no declarada (o a algo que no es función)
+  E12  Número de argumentos incorrecto
+  E13  Tipo de argumento incorrecto
+  E14  'retornar' con un tipo distinto al declarado por la función
+  E15  'retornar' fuera de una función
+  E16  La función no retorna en todos los caminos
+  E17  Comisión o seguro inválido (negativo, o seguro >= 100%)
+Regla general: toda mezcla de monedas distintas se reporta como E04.
 """
 from FinLangParser import FinLangParser
 from FinLangVisitor import FinLangVisitor
@@ -48,6 +57,16 @@ class SemanticAnalyzer(FinLangVisitor):
     def __init__(self):
         self.scopes = [{}]
         self.errors = []
+        self.funcs = {}        # nombre -> (lista de (nombre, Ty) de parámetros, Ty de retorno)
+        self.current_func = None
+        self._analizadas = set()
+        self.types = {}        # nodo expr -> Ty (lo usa el generador de código)
+
+    def visit(self, tree):
+        r = super().visit(tree)
+        if isinstance(tree, FinLangParser.ExprContext):
+            self.types[tree] = r
+        return r
 
     # ----------------------------- utilidades -------------------------
     def err(self, node, code, msg):
@@ -62,7 +81,7 @@ class SemanticAnalyzer(FinLangVisitor):
 
     def declare(self, id_node, ty):
         name = id_node.getText()
-        if name in self.scopes[-1]:
+        if name in self.scopes[-1] or (self.scopes[-1] is self.scopes[0] and name in self.funcs):
             self.err(id_node, 'E02', f"'{name}' ya fue declarado en este ámbito")
         else:
             self.scopes[-1][name] = ty
@@ -106,9 +125,78 @@ class SemanticAnalyzer(FinLangVisitor):
 
     # ----------------------------- sentencias -------------------------
     def visitProgram(self, ctx):
-        for s in ctx.statement():
-            self.visit(s)
+        # Pasada previa: firmas de todas las funciones (permite llamar antes de definir y recursión)
+        for top in ctx.topLevel():
+            f = top.funcDecl()
+            if f is None:
+                continue
+            name = f.ID().getText()
+            params = []
+            for p in (f.paramList().param() if f.paramList() else []):
+                pty = self.resolve_tipo(p.tipo())
+                if pty.kind == 'dinero' and pty.cur is None:
+                    self.err(p.ID(), 'E10', f"el parámetro '{p.ID().getText()}' es 'dinero' pero no tiene moneda (use dinero[PEN])")
+                    pty = ERR
+                params.append((p.ID().getText(), pty))
+            ret = self.resolve_tipo(f.tipo())
+            if ret.kind == 'dinero' and ret.cur is None:
+                self.err(f.tipo(), 'E10', f"la función '{name}' retorna 'dinero' sin moneda (use dinero[PEN])")
+                ret = ERR
+            if name in self.funcs:
+                self.err(f.ID(), 'E02', f"la función '{name}' ya fue declarada")
+                continue
+            self.funcs[name] = (params, ret)
+        for top in ctx.topLevel():
+            self.visit(top)
         return None
+
+    def visitTopLevel(self, ctx):
+        return self.visit(ctx.getChild(0))
+
+    @classmethod
+    def _returns(cls, st):
+        """True si la sentencia retorna en todos sus caminos."""
+        if st.returnStmt():
+            return True
+        if st.block():
+            return any(cls._returns(x) for x in st.block().statement())
+        if st.ifStmt():
+            br = st.ifStmt().statement()
+            return len(br) == 2 and cls._returns(br[0]) and cls._returns(br[1])
+        return False
+
+    def visitFuncDecl(self, ctx):
+        name = ctx.ID().getText()
+        sig = self.funcs.get(name)
+        if sig is None or name in self._analizadas:
+            return None                                   # duplicada: ya se reportó E02
+        self._analizadas.add(name)
+        params, ret = sig
+        saved, self.scopes = self.scopes, [self.scopes[0], {}]
+        for p, (pname, pty) in zip(ctx.paramList().param() if ctx.paramList() else [], params):
+            self.declare(p.ID(), pty)
+        self.current_func = (name, ret)
+        body = ctx.block().statement()
+        for st in body:                                    # el cuerpo comparte ámbito con los parámetros
+            self.visit(st)
+        if not any(self._returns(st) for st in body):
+            self.err(ctx.ID(), 'E16', f"la función '{name}' no retorna un valor en todos los caminos")
+        self.current_func = None
+        self.scopes = saved
+        return None
+
+    def visitReturnStmt(self, ctx):
+        ety = self.visit(ctx.expr())
+        if self.current_func is None:
+            self.err(ctx, 'E15', "'retornar' solo puede usarse dentro de una función")
+            return
+        name, ret = self.current_func
+        if ety.bad or ret.bad:
+            return
+        if self._mixed_currency(ret, ety):
+            self.err(ctx.expr(), 'E04', f"la función '{name}' retorna {ret} pero se retorna {ety}; use convertir()")
+        elif ety != ret:
+            self.err(ctx.expr(), 'E14', f"la función '{name}' retorna {ret} pero se retorna {ety}")
 
     def visitBlock(self, ctx):
         self.scopes.append({})
@@ -174,6 +262,27 @@ class SemanticAnalyzer(FinLangVisitor):
         v = self.const_value(e_plazo)
         if v is not None and (v <= 0 or v != int(v)):
             self.err(e_plazo, 'E07', "el plazo debe ser un entero positivo (en meses)")
+        vistos = set()
+        for x in ctx.loanExtra():
+            campo = x.getChild(0).getText()
+            e = x.expr()
+            ty = self.visit(e)
+            if campo in vistos:
+                self.err(x, 'E02', f"el campo '{campo}' está repetido en el préstamo '{ctx.ID().getText()}'")
+            vistos.add(campo)
+            v = self.const_value(e)
+            if campo == 'comision':
+                if not ty.bad and ty.kind != 'dinero':
+                    self.err(e, 'E03', f"'comision' debe ser dinero, se encontró {ty}")
+                elif not ty.bad and cur and ty.cur != cur:
+                    self.err(e, 'E04', f"la comisión está en {ty.cur} pero el préstamo está en {cur}")
+                if v is not None and v < 0:
+                    self.err(e, 'E17', "la comisión no puede ser negativa")
+            else:
+                if not ty.bad and ty.kind != 'tasa':
+                    self.err(e, 'E03', f"'seguro' debe ser tasa, se encontró {ty}")
+                if v is not None and (v < 0 or v >= 100):
+                    self.err(e, 'E17', f"el seguro {v:g}% no es válido; debe estar en [0%, 100%)")
         self.declare(ctx.ID(), Ty('prestamo', cur))
 
     def visitPrintStmt(self, ctx):
@@ -321,6 +430,47 @@ class SemanticAnalyzer(FinLangVisitor):
             self.err(ctx.expr(1), 'E03', f"el tipo de cambio debe ser num, se encontró {rate}")
             ok = False
         return money(ctx.CURRENCY().getText()) if ok and not a.bad and not rate.bad else ERR
+
+    def visitTceaCall(self, ctx):
+        return TASA if self.loan_of(ctx.ID()) else ERR
+
+    def visitTemCall(self, ctx):
+        return TASA if self.loan_of(ctx.ID()) else ERR
+
+    def visitCapitalizarCall(self, ctx):
+        c, t, n = (self.visit(e) for e in ctx.expr())
+        ok = True
+        for ty, want, e, campo in ((c, 'dinero', ctx.expr(0), 'el capital'), (t, 'tasa', ctx.expr(1), 'la tasa'),
+                                   (n, 'num', ctx.expr(2), 'el número de periodos')):
+            if ty.bad:
+                ok = False
+            elif ty.kind != want:
+                self.err(e, 'E03', f"en capitalizar(), {campo} debe ser {want}, se encontró {ty}")
+                ok = False
+        return c if ok else ERR
+
+    def visitFuncCall(self, ctx):
+        name = ctx.ID().getText()
+        args = ctx.argList().expr() if ctx.argList() else []
+        atys = [self.visit(a) for a in args]
+        if name not in self.funcs:
+            if self.lookup(name) is not None:
+                self.err(ctx, 'E11', f"'{name}' no es una función")
+            else:
+                self.err(ctx, 'E11', f"la función '{name}' no ha sido declarada")
+            return ERR
+        params, ret = self.funcs[name]
+        if len(args) != len(params):
+            self.err(ctx, 'E12', f"'{name}' espera {len(params)} argumento(s) y recibió {len(args)}")
+            return ret
+        for i, (a, aty, (pname, pty)) in enumerate(zip(args, atys, params), 1):
+            if aty.bad or pty.bad:
+                continue
+            if self._mixed_currency(pty, aty):
+                self.err(a, 'E04', f"argumento {i} de '{name}': se esperaba {pty} y se recibió {aty}; use convertir()")
+            elif aty != pty:
+                self.err(a, 'E13', f"argumento {i} de '{name}' ('{pname}'): se esperaba {pty} y se recibió {aty}")
+        return ret
 
     def visitMoneyLit(self, ctx):
         return money(ctx.CURRENCY().getText())

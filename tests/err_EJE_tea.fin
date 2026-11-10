@@ -1,0 +1,6 @@
+// ESPERA: EJE
+// E06 detectado en ejecución: la TEA viene de una variable, no de un literal.
+tasa t = 80%;
+t = t + 70%;
+prestamo p { monto: 1000 PEN; tea: t; plazo: 12; }
+mostrar "no se llega aquí";

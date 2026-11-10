@@ -1,0 +1,20 @@
+// ESPERA: OK
+// Préstamo con comisión fija mensual y seguro de desgravamen (% mensual sobre el saldo).
+prestamo consumo {
+    monto: 10000 PEN;
+    tea: 20%;
+    plazo: 12;
+    comision: 10 PEN;
+    seguro: 0.08%;
+}
+prestamo sinCostos { monto: 10000 PEN; tea: 20%; plazo: 12; }
+mostrar "TEA:", 20%, "TEM:", tasaMensual(consumo);
+mostrar "Cuota:", cuota(consumo);
+mostrar "TCEA con costos:", tcea(consumo);
+mostrar "TCEA sin costos:", tcea(sinCostos);
+si (tcea(consumo) > tcea(sinCostos)) mostrar "Los costos encarecen el crédito";
+// SALIDA: TEA: 20% TEM: 1.53095%
+// SALIDA: Cuota: 918.57 PEN
+// SALIDA: TCEA con costos: 23.6549%
+// SALIDA: TCEA sin costos: 20%
+// SALIDA: Los costos encarecen el crédito

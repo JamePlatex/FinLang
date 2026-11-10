@@ -1,0 +1,11 @@
+// ESPERA: OK
+// Ejemplo de referencia del informe: 30000 USD, TEA 12%, 36 meses.
+prestamo auto { monto: 30000 USD; tea: 12%; plazo: 36; }
+mostrar "TEM:", tasaMensual(auto);
+mostrar "Cuota:", cuota(auto);
+mostrar "Interés total:", interesTotal(auto);
+mostrar "TCEA:", tcea(auto);
+// SALIDA: TEM: 0.948879%
+// SALIDA: Cuota: 987.66 USD
+// SALIDA: Interés total: 5555.84 USD
+// SALIDA: TCEA: 12%

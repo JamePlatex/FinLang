@@ -1,0 +1,7 @@
+// ESPERA: OK
+// Else colgante: el 'sino' se asocia al 'si' más cercano (resolución voraz de ANTLR).
+// Si se asociara al primer 'si', no se imprimiría nada (a es verdadero).
+bool a = verdadero;
+bool b = falso;
+si (a) si (b) mostrar "rama b"; sino mostrar "sino del si interno";
+// SALIDA: sino del si interno

@@ -1,0 +1,4 @@
+// ESPERA: E11
+num x = 3;
+num y = duplicar(x);
+num z = x(2);

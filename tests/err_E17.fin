@@ -1,0 +1,2 @@
+// ESPERA: E17
+prestamo p { monto: 5000 PEN; tea: 15%; plazo: 12; comision: -5 PEN; seguro: 120%; }

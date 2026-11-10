@@ -1,0 +1,9 @@
+// ESPERA: E05
+// Variantes de E05: unario, relacional, igualdad y lógicos con tipos inválidos.
+bool b = verdadero;
+num n = 2;
+mostrar -b, !n;
+mostrar b < verdadero;
+mostrar n == 2 PEN;
+mostrar n && b, b || 3;
+mostrar 12% * 5%, 5 / 10 PEN;

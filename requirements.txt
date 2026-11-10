@@ -1,1 +1,5 @@
 antlr4-python3-runtime==4.13.1
+# Back end (Hito 2): generación de LLVM IR y ejecución JIT. Probado con llvmlite 0.50.0 (LLVM 22).
+llvmlite>=0.44
+# Solo para las pruebas numéricas (oráculo independiente)
+numpy-financial>=1.0

@@ -1,0 +1,5 @@
+// ESPERA: E16
+funcion signo(num n): num {
+    si (n > 0) retornar 1;
+    sino si (n < 0) retornar -1;
+}

@@ -1,0 +1,8 @@
+// ESPERA: E03
+// Variantes de E03: campos del préstamo, límites de 'para', argumentos de convertir/capitalizar.
+prestamo p { monto: 1000; tea: 10%; plazo: 12; comision: 5%; seguro: 3 PEN; }
+para i desde 1% hasta 12 mostrar i;
+dinero[USD] u = convertir(100, USD, 3.75 PEN);
+dinero[PEN] k = capitalizar(1000 PEN, 2, 12);
+dinero[PEN] w = 10 PEN;
+w = verdadero;

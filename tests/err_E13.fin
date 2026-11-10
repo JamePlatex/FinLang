@@ -1,0 +1,3 @@
+// ESPERA: E13
+funcion doble(num n): num { retornar n * 2; }
+num y = doble(12%);

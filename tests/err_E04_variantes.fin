@@ -1,0 +1,8 @@
+// ESPERA: E04
+// Variantes de E04: división, comparaciones, retorno y comisión en otra moneda.
+dinero a = 10 PEN;
+dinero b = 10 USD;
+num r = a / b;
+mostrar a < b, a == b;
+funcion f(dinero[PEN] x): dinero[USD] { retornar x; }
+prestamo p { monto: 1000 PEN; tea: 10%; plazo: 12; comision: 2 USD; }

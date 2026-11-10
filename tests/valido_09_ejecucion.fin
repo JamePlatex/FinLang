@@ -1,0 +1,23 @@
+// ESPERA: OK
+// Ejecución de expresiones y estructuras de control.
+dinero ahorro = 1000 PEN;
+tasa t = 1%;
+num meses = 0;
+mientras (ahorro < 1100 PEN) {
+    ahorro = ahorro + ahorro * t;
+    meses = meses + 1;
+}
+mostrar "Meses para llegar a 1100:", meses, "saldo:", ahorro;
+mostrar "Capitalizado 12 meses:", capitalizar(1000 PEN, 1%, 12);
+num suma = 0;
+para i desde 1 hasta 10 suma = suma + i;
+mostrar "Suma 1..10:", suma;
+bool ok = verdadero && !(suma != 55);
+mostrar ok, 7 / 2, -3 + 10 * 2, (1 + 2) * 3;
+dinero[USD] d = convertir(375 PEN, USD, 0.2667);
+mostrar d, 100 USD / 4 USD;
+// SALIDA: Meses para llegar a 1100: 10 saldo: 1104.62 PEN
+// SALIDA: Capitalizado 12 meses: 1126.83 PEN
+// SALIDA: Suma 1..10: 55
+// SALIDA: verdadero 3.5 17 9
+// SALIDA: 100.01 USD 25

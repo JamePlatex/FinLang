@@ -1,0 +1,27 @@
+// ESPERA: OK
+// Funciones: parámetros tipados, retorno, recursión, llamada antes de la definición
+// y acceso a variables globales.
+tasa seguroMensual = 0.05%;
+
+num total = factorial(5);
+mostrar "5! =", total;
+
+funcion factorial(num n): num {
+    si (n <= 1) retornar 1;
+    retornar n * factorial(n - 1);
+}
+
+funcion conSeguro(dinero[PEN] c, dinero[PEN] saldo): dinero[PEN] {
+    retornar c + saldo * seguroMensual;
+}
+
+funcion esCara(dinero[PEN] c, dinero[PEN] ingreso): bool {
+    retornar c > ingreso * 0.3;
+}
+
+dinero[PEN] c = conSeguro(500 PEN, 10000 PEN);
+mostrar "Cuota con seguro:", c;
+mostrar "¿Es cara?", esCara(c, 1500 PEN);
+// SALIDA: 5! = 120
+// SALIDA: Cuota con seguro: 505.00 PEN
+// SALIDA: ¿Es cara? verdadero

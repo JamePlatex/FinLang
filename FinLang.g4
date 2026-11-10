@@ -2,12 +2,23 @@ grammar FinLang;
 
 // =====================================================================
 //  FinLang - DSL para finanzas personales y préstamos
-//  Trabajo Parcial - Teoría de Compiladores 2026-2
+//  Hito 2 - Teoría de Compiladores 2026-2
 // =====================================================================
 
 // ------------------------- ANALIZADOR SINTÁCTICO ---------------------
 
-program : statement* EOF ;
+// Las funciones solo se declaran en el nivel superior (no hay funciones anidadas)
+program : topLevel* EOF ;
+
+topLevel
+    : funcDecl
+    | statement
+    ;
+
+// funcion cuotaConSeguro(dinero[PEN] c, tasa s): dinero[PEN] { retornar c + c * s; }
+funcDecl  : FUNCION ID LPAREN paramList? RPAREN COLON tipo block ;
+paramList : param (COMMA param)* ;
+param     : tipo ID ;
 
 statement
     : declaration
@@ -18,6 +29,7 @@ statement
     | whileStmt
     | forStmt
     | scheduleStmt
+    | returnStmt
     | block
     ;
 
@@ -35,13 +47,22 @@ tipo
 
 assignment : ID ASSIGN expr SEMI ;
 
-// Construcción propia del dominio: préstamo
+// Construcción propia del dominio: préstamo.
+// monto, tea y plazo son obligatorios y van en ese orden; comision (dinero fijo
+// por cuota) y seguro (tasa mensual sobre el saldo, p. ej. desgravamen) son
+// opcionales y solo afectan el pago total y la TCEA.
 loanDecl
     : PRESTAMO ID LBRACE
         MONTO COLON expr SEMI
         TEA   COLON expr SEMI
         PLAZO COLON expr SEMI
+        loanExtra*
       RBRACE
+    ;
+
+loanExtra
+    : COMISION COLON expr SEMI      # comisionField
+    | SEGURO   COLON expr SEMI      # seguroField
     ;
 
 printStmt    : MOSTRAR expr (COMMA expr)* SEMI ;
@@ -49,6 +70,14 @@ ifStmt       : SI LPAREN expr RPAREN statement (SINO statement)? ;
 whileStmt    : MIENTRAS LPAREN expr RPAREN statement ;
 forStmt      : PARA ID DESDE expr HASTA expr statement ;
 scheduleStmt : CRONOGRAMA ID SEMI ;
+
+returnStmt   : RETORNAR expr SEMI ;
+
+// Else colgante: 'si (a) si (b) x; sino y;' es ambigua en esta gramática.
+// ANTLR4 la resuelve de forma voraz: el 'sino' se asocia al 'si' más cercano
+// (el mismo criterio de C y Java). Ver tests/valido_10_else_colgante.fin.
+
+argList : expr (COMMA expr)* ;
 
 // La precedencia la define el orden de las alternativas (mayor a menor)
 expr
@@ -63,6 +92,10 @@ expr
     | CUOTA LPAREN ID RPAREN                                   # cuotaCall
     | INTERES_TOTAL LPAREN ID RPAREN                           # interesTotalCall
     | CONVERTIR LPAREN expr COMMA CURRENCY COMMA expr RPAREN   # convertCall
+    | TCEA LPAREN ID RPAREN                                    # tceaCall
+    | TASA_MENSUAL LPAREN ID RPAREN                            # temCall
+    | CAPITALIZAR LPAREN expr COMMA expr COMMA expr RPAREN     # capitalizarCall
+    | ID LPAREN argList? RPAREN                                # funcCall
     | NUMERO CURRENCY                                          # moneyLit
     | NUMERO                                                   # numLit
     | PORCENTAJE                                               # rateLit
@@ -95,6 +128,13 @@ CRONOGRAMA     : 'cronograma' ;
 CUOTA          : 'cuota' ;
 INTERES_TOTAL  : 'interesTotal' ;
 CONVERTIR      : 'convertir' ;
+TCEA           : 'tcea' ;
+TASA_MENSUAL   : 'tasaMensual' ;
+CAPITALIZAR    : 'capitalizar' ;
+COMISION       : 'comision' ;
+SEGURO         : 'seguro' ;
+FUNCION        : 'funcion' ;
+RETORNAR       : 'retornar' ;
 TRUE           : 'verdadero' ;
 FALSE          : 'falso' ;
 

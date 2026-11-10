@@ -1,0 +1,4 @@
+// ESPERA: E14
+funcion mitad(dinero[PEN] m): num {
+    retornar m / 2;
+}

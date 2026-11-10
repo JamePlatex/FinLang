@@ -1,0 +1,20 @@
+// ESPERA: OK
+// Retorno dentro de un bucle, recursión con bool, cortocircuito y ámbitos en el back end.
+funcion mesesHasta(dinero[PEN] meta, dinero[PEN] aporte): num {
+    dinero[PEN] s = 0 PEN;
+    num k = 0;
+    mientras (verdadero) {
+        si (s >= meta) retornar k;
+        s = s + aporte;
+        k = k + 1;
+    }
+    retornar -1;
+}
+funcion par(num n): bool { si (n == 0) retornar verdadero; sino retornar !par(n - 1); }
+num cero = 0;
+si (falso && 1 / cero > 0) mostrar "no"; sino mostrar "cortocircuito ok";
+mostrar mesesHasta(1000 PEN, 300 PEN), par(10), par(7);
+si (par(4) == verdadero) { num z = 2; mostrar z; }
+// SALIDA: cortocircuito ok
+// SALIDA: 4 verdadero falso
+// SALIDA: 2

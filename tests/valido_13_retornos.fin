@@ -1,0 +1,9 @@
+// ESPERA: OK
+// Retorno en todos los caminos a través de bloques anidados, tasa / num y literales con paréntesis.
+funcion clasificar(num n): num {
+    { si (n > 0) { retornar 1; } sino { retornar 0; } }
+}
+tasa mitad = 12% / 2;
+prestamo p { monto: (5000 PEN); tea: (10%); plazo: (6); }
+mostrar clasificar(5), clasificar(-2), mitad, 2 * 5%;
+// SALIDA: 1 0 6% 10%
